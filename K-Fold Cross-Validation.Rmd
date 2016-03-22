@@ -1,0 +1,100 @@
+---
+title: "K-Fold Cross-Validation"
+author: "Lisa Stuart"
+date: "March 17, 2016"
+output: html_document
+---
+
+## K-Fold Cross-Validation
+
+This is a generalization of Leave-One-Out Cross-Validation (when k = 1, it is leave-one-out; when k = 2, it is validation set):
+
+1. Set a seed for Reproducible Research and load boot package for cv.glm.
+2. Split the n observations into K equally-sized folds.
+3. For k = 1, ..., K:
+a. Fit the model using the observations not in the kth fold.
+b. Let e_k denote the test error for the observations in the kth fold.
+4. Calculate the sum over all errors of e_k, the total K-fold cross validation error.
+
+* Note: When picking k, 5 and 10 work well.
+
+Let's see an example where we are just going to simulate some data to look at:
+
+This code creates a training set with a 100 x 100 matrix of random normal variables (variables from a normal distribution, here with a mean 0 and standard deviation 1) with 100 columns.  Then we'll print the first 6 rows and the first 10 columns to get an idea of what the values look like.
+
+```{r x training matrix}
+xtr = matrix(rnorm(100*100), ncol = 100)
+xtr[1:6, 1:10]
+```
+
+As you probably noticed, the values randomly bounce around 0, mostly between -1 and 1, with occasional values more extreme that represent values further away from the mean than 1 standard deviation.
+
+Create a vector of beta values with 10 (good) signals and 90 junk variables.
+
+```{r beta}
+beta = c(rep(1,10), rep(0,90))
+beta[1:15]
+```
+
+Create a vector of 100 response (y) variables for the simulated training data.
+
+```{r y train}
+ytr = xtr%*%beta + rnorm(100)
+ytr[1:5]
+```
+
+Instantiate a NULL value for the training error to be used in the function that follows.
+
+```{r NULL}
+cv.err = NULL
+```
+
+Create a function to fit a generalized linear model (GLM) and calculate the error.
+
+```{r function}
+library(boot)
+for(i in 2:50) {
+    dat = data.frame(x=xtr[ ,1:i], y=ytr)
+    mod = glm(y~., data = dat)
+    cv.err = c(cv.err, cv.glm(dat, mod, K=6)$delta[1])
+}
+```
+
+And plot 6-fold cross-validation error as a function of the number of variables with y on the log scale.
+
+```{r, echo=FALSE}
+plot(2:50, cv.err, xlab="Number of Variables", ylab = "6-Fold CV Error", log = "y")
+abline(v=10, col = "red")
+```
+
+* Six-fold CV identifies the model with just over ten predictors (variables).
+* First 10 predictors contain signal, the rest are noise.
+* After estimating the test error, refit the 'best' model on all of the available observations to measure model performance.
+
+### Another example from Introduction to Statistical Learning in R
+
+Set a seed for Reproducible Research
+
+```{r}
+set.seed(17)
+```
+
+Function to look at mpg as a function of horsepower and calculate cross validation error to the 10th degree
+
+```{r function}
+cv.error.10=rep(0,10)
+for (i in 1:10){
+  glm.fit=glm(mpg~poly(horsepower,i),data=Auto)
+  cv.error.10[i]=cv.glm(Auto,glm.fit,K=10)$delta[1]
+}
+cv.error.10
+```
+
+Plot it
+
+```{r}
+plot(cv.error.10, xlab = "polynomial degree", cex = 5) 
+lines(cv.error.10)
+```
+
+Second degree seems sufficient

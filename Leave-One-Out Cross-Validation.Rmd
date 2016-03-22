@@ -1,0 +1,75 @@
+---
+title: "Leave-One-Out Cross-Validation Approach"
+author: "Lisa Stuart"
+date: "March 17, 2016"
+output: html_document
+---
+
+1. Set a seed for Reproducible Research
+2. For i = 1 ... n:
+a. Fit the model using obervations 1, ..., i - 1, i + 1, ... , n.  Let beta_hat_(i) denote the regression coefficient estimates.
+b. Compute e_i = (y_i - y_hat_(i))^2
+3. Calculate sum of e_i's, the total Cross Validation error.
+
+Each training set has n - 1 variables in common so each set is correlated.  This is better than the Validation Set Approach, but not as good as K-Fold Cross-Validation.
+
+### An Example from Introduction to Statistical Learning in R
+
+Fit a generalized linear model, look at the coefficients.
+
+```{r example}
+library(ISLR)
+glm.fit=glm(mpg~horsepower,data=Auto)
+coef(glm.fit)
+```
+
+There is a negative relationship b/t mpg and horsepower
+
+Fit a linear model and look at the coefficients
+
+```{r linear}
+lm.fit=lm(mpg~horsepower,data=Auto)
+coef(lm.fit)
+```
+
+Load boot package to use cv.glm, fit a glm and perform cross validation.  The default for cv.glm is to set k equal to number of observations in data which just gives leave-one-out cross-validation (LOOCV).
+
+```{r}
+library(boot)
+data(Auto)
+glm.fit=glm(mpg~horsepower,data=Auto)
+cv.err=cv.glm(Auto,glm.fit)
+```
+
+Look at LOOCV error and adjusted error
+
+```{r}
+cv.err$delta
+```
+
+Plot a histogram
+
+```{r echo=FALSE}
+par(mfrow=c(1,1))
+hist(Auto$mpg)
+```
+
+A function to look at cross validation error
+
+```{r}
+cv.error=rep(0,5)
+for (i in 1:5){
+  glm.fit=glm(mpg~poly(horsepower,i),data=Auto)
+  cv.error[i]=cv.glm(Auto,glm.fit)$delta[1]
+}
+cv.error
+```
+
+Plot it
+
+```{r}
+plot(cv.error, xlab="polynomial degree", ylab = "test mse")
+lines(cv.error)
+```
+
+It appears that 2nd degree is sufficient with the Auto data when assessing mpg as a function of horsepower.

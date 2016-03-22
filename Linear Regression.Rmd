@@ -1,0 +1,175 @@
+---
+title: "Linear Regression"
+author: "Lisa Stuart"
+date: "March 18, 2016"
+output: html_document
+---
+
+### An example from the Introduction to Statistical Learning
+
+Load required libraries:
+
+```{r}
+library(MASS)
+library(ISLR)
+```
+
+Look at the Boston data set:
+
+```{r}
+attach(Boston)
+head(Boston)
+dim(Boston)
+```
+
+Fit a linear model to median value (medv) as a function of lower socioeconomic status
+
+```{r }
+lm.fit=lm(medv~lstat)
+lm.fit
+summary(lm.fit)
+```
+
+The linear model fit estimated the intercept and slope coefficients.  The slope of -0.95 basically shows a negative relationship between the dependent variable medv and lstat.  It estimates that for every unit change in lstat, the medv goes down by $1000 as seen in this plot:
+
+```{r}
+plot(lstat, medv)
+```
+
+To pull out names of the variable columns and the corresponding coefficients (no need to spell out the entire word).
+
+```{r}
+names(lm.fit)
+coef(lm.fit)
+```
+
+The confidence interval for the slope coefficient does not include zero, so can be confident this coefficient is not zero (which would indicate there is no relationship between x (lstat) and y (medv))
+
+```{r}
+confint(lm.fit)
+```
+
+Predict a confidence interval at specific values of x in original data set:
+
+```{r}
+predict(lm.fit,data.frame(lstat=(c(5,10,15))), interval="confidence")
+```
+
+Predict confidence intervals for specific values of x using future data:
+
+NOTE: The confidence intervals are wider since prediction of the future is less certain than making inferences using the current data.
+
+```{r}
+predict(lm.fit,data.frame(lstat=(c(5,10,15))), interval="prediction")
+```
+
+Make a few plots, play with a few line widths, colors, and shapes
+
+```{r}
+plot(lstat,medv)
+abline(lm.fit)
+abline(lm.fit,lwd=3)
+abline(lm.fit,lwd=3,col="red")
+plot(lstat,medv,col="red")
+plot(lstat,medv,pch=20)
+plot(lstat,medv,pch="+")
+plot(1:20,1:20,pch=1:20)
+```
+
+Make a few more plots using predict function (predict(lm.fit)) for the fitted x and residuals (observed y minus estimated) and rstudent which are standardized residuals:
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm.fit) # y - y hat, etc.
+plot(predict(lm.fit), residuals(lm.fit))
+plot(predict(lm.fit), rstudent(lm.fit))
+plot(hatvalues(lm.fit))
+which.max(hatvalues(lm.fit))
+```
+
+## Multiple Linear Regression
+
+Look to see if age is related to lstat:
+
+```{r}
+lm.fit=lm(medv~lstat+age,data=Boston)
+summary(lm.fit)
+```
+
+Put all variables in the model with the "."
+
+```{r}
+lm.fit=lm(medv~.,data=Boston) 
+summary(lm.fit)
+```
+
+The variance inflation factor (VIF) quantifies the severity of multicollinearity in an ordinary least squares regression analysis. It provides an index that measures how much the variance (the square of the estimate's standard deviation) of an estimated regression coefficient is increased because of collinearity (a phenomenon in which two or more predictor variables in a multiple regression model are highly correlated, meaning that one can be linearly predicted from the others with a substantial degree of accuracy).  VIF of 5 or 10 and above indicates a multicollinearity problem. 
+
+```{r}
+vif(lm.fit)
+```
+
+Fit another linear model using all variables except age:
+
+```{r}
+lm.fit1=lm(medv~.-age)
+summary(lm.fit1)
+```
+
+### Interaction Terms
+
+Put all the predictor variables and their interaction terms into the model and print out a summary:
+
+```{r}
+summary(lm(medv~lstat*age,data=Boston))
+```
+
+## Non-linear Transformations of the Predictors
+
+Use "I" as a function to transform a predictor to squared, cubed, etc.  Performs the calculations "in place."
+
+```{r}
+lm.fit2=lm(medv~lstat+I(lstat^2)) 
+summary(lm.fit2)
+```
+
+Run an ANOVA on the two models:
+
+```{r}
+lm.fit=lm(medv~lstat)
+anova(lm.fit,lm.fit2)
+```
+
+Plot the 2nd degree linear model and a 5th degree polynomial (x + X^2 + x^3...):
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm.fit2)
+lm.fit5=lm(medv~poly(lstat,5))
+summary(lm.fit5)
+```
+
+Look at the median value of homes in Boston as a function of the logged number of rooms they have:
+
+```{r}
+summary(lm(medv~log(rm)))
+```
+
+## Qualitative Variables
+
+Look at the Carseats data for how to handle qualitative data:
+
+```{r}
+data(Carseats)
+attach(Carseats)
+names(Carseats)
+```
+
+Fit a linear model to Sales as a function of all predictor variables plus a few interaction terms.  Note that R will automatically convert categorical/quantitative variables (k-1) to dummy variables which can be seen with the constrasts() function.
+
+```{r}
+lm.fit=lm(Sales~.+Income:Advertising+Price:Age)
+summary(lm.fit)
+contrasts(ShelveLoc)
+```
+

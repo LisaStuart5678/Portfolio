@@ -1,0 +1,78 @@
+---
+title: "The Validation Set Approach"
+author: "Lisa Stuart"
+date: "March 17, 2016"
+output: html_document
+---
+
+
+1. Set a seed for Reproducible Research.
+2. Split the n observations into two sets of approximately equal size, a training set and a validation set.
+a. Fit the model using the training observations.  Let beta_hat denote the regression coefficient estimates.
+b. For each observation in the validation set, compute the training error
+        e_i = (y - y_hat)^2
+3. Calculate the total validation set error by summing the e_i's over all of the validation set observations.
+
+### An Example from Introduction to Statistical Learning in R
+
+```{r example}
+library(ISLR)
+set.seed(1) 
+dim(Auto)
+```
+
+Randomly sample 196 numbers out of first 392 integers to create training set. Printing the training set shows the indices the training set has:
+
+```{r sampling}
+train=sample(392,196)
+train
+```
+
+Fit a linear model to the training set and then calculate the test error from it; y = mpg, predict = y_hats, all but train subset gives test subset
+
+```{r linear model fit}
+attach(Auto)
+lm.fit=lm(mpg~horsepower,data=Auto,subset=train)
+mean((mpg-predict(lm.fit,Auto))[-train]^2)
+```
+
+Fit a 2nd degree polynomial (quadratic) 
+
+```{r 2nd degree}
+lm.fit2=lm(mpg~poly(horsepower,2),data=Auto,subset=train)
+mean((mpg-predict(lm.fit2,Auto))[-train]^2)
+```
+
+Fit a 3rd degree polynomial
+
+```{r 3rd degree}
+lm.fit3=lm(mpg~poly(horsepower,3),data=Auto,subset=train)
+mean((mpg-predict(lm.fit3,Auto))[-train]^2)
+```
+
+Fit a 5th degree polynomial, a more complex model but not lower test error
+
+```{r 5th degree}
+lm.fit5=lm(mpg~poly(horsepower,5),data=Auto,subset=train)
+mean((mpg-predict(lm.fit5,Auto))[-train]^2)
+```
+
+Check training error of 3rd degree polynomial:
+
+```{r training error}
+mean((mpg-predict(lm.fit3,Auto))[train]^2)
+```
+
+Repeat with a different seed:
+
+```{r repeat}
+set.seed(2)
+train=sample(392,196)
+lm.fit=lm(mpg~horsepower,subset=train)
+mean((mpg-predict(lm.fit,Auto))[-train]^2)
+lm.fit2=lm(mpg~poly(horsepower,2),data=Auto,subset=train)
+mean((mpg-predict(lm.fit2,Auto))[-train]^2)
+lm.fit3=lm(mpg~poly(horsepower,3),data=Auto,subset=train)
+mean((mpg-predict(lm.fit3,Auto))[-train]^2)
+```
+

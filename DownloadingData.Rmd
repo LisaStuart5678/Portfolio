@@ -1,0 +1,47 @@
+---
+title: "Downloading Data"
+author: "Lisa Stuart"
+date: "February 25, 2016"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+## .csv
+
+```{r}
+fileUrl <- "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06hid.csv"
+download.file(fileUrl, destfile = "./idahohousing.csv") # copies file to working dir and given this name
+idaho <- read.csv("./idahohousing.csv")
+```
+
+## .xlsx
+
+```{r}
+library(xlsx)
+gasfileUrl <- "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FDATA.gov_NGAP.xlsx"
+download.file(gasfileUrl, destfile = "./naturalgas.xlsx", mode='wb')
+colIndex <- 7:15 # to subset the data
+rowIndex <- 18:23
+dat <- read.xlsx("./naturalgas.xlsx", sheetIndex = 1, colIndex = colIndex, rowIndex = rowIndex)
+```
+
+
+## XML
+
+```{r}
+library(XML)
+restaurantfileUrl <- "http://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Frestaurants.xml"
+doc <- xmlTreeParse(restaurantfileUrl, useInternalNodes = TRUE)
+
+```
+
+?read.csv
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -1,0 +1,95 @@
+---
+title: "Model Complexity, Training Error, and Test Error"
+author: "Lisa Stuart"
+date: "March 16, 2016"
+output: html_document
+---
+
+# Model Complexity, Training Error, and Test Error
+
+* One of the measures of model complexity is the number of variables that are used to fit a model.
+* As we fit more complex models - e.g. models with more variables - the training error will always decrease
+* But the test error might not necessarily decrease
+* The number of variables in the model is not the only - or even best - way to quantify model complexity
+
+Let's see an example where we are just going to simulate some data to look at:
+
+This code creates a training set with a 100 x 100 matrix of random normal variables (variables from a normal distribution, here with a mean 0 and standard deviation 1) with 100 columns.  Then we'll print the first 6 rows and the first 10 columns to get an idea of what the values look like.
+
+```{r x training matrix}
+xtr = matrix(rnorm(100*100), ncol = 100)
+xtr[1:6, 1:10]
+```
+
+As you probably noticed, the values randomly bounce around 0, mostly between -1 and 1, with occasional values more extreme that represent values further away from the mean than 1 standard deviation.
+
+Next, let's create a test or validation set with a 100,000 x 100 matrix of random normal variables, again with a mean of 0 and standard deviation equal to 1 with 100 columns.  
+
+```{r x test matrix}
+xte = matrix(rnorm(100000*100), ncol = 100)
+```
+
+Create a vector of beta values with 10 (good) signals and 90 junk variables.
+
+```{r beta}
+beta = c(rep(1,10), rep(0,90))
+beta[1:15]
+```
+
+Create a vector of 100 response (y) variables for the training data and 100,000 for the test data.
+
+```{r y train and test}
+ytr = xtr%*%beta + rnorm(100)
+ytr[1:5]
+yte = xte%*%beta + rnorm(100000)
+yte[1:5]
+```
+
+Instantiate NULL values for R squared, training error, and test error to be used in the function that follows.
+
+```{r NULL}
+rsq = trainerr = testerr = NULL
+```
+
+Function to fit a linear model to the training data and then calculates R squared and estimates both training error and test error.
+
+```{r function}
+for(i in 2:100) {
+    mod = lm(ytr ~ xtr[, 1:i]) # fit a linear model to train to include all rows and columns 1 to i
+    rsq = c(rsq, summary(mod)$r.squared) # get R^2 from model summary using $ operator
+    beta = mod$coef[-1] # only grab slope coefficient estimate
+    intercept = mod$coef[1] # grab intercept coefficient estimate
+    trainerr = c(trainerr, mean((xtr[, 1:i]%*%beta + intercept - ytr)^2)) # estimate training error
+    testerr = c(testerr, mean((xte[ , 1:i]%*%beta + intercept - yte)^2)) # estimate test error
+}
+```
+
+Recalling that only 10 variables are related to the response and that the other 90 are just junk, here are plots (with y on the log scale) that show that as the number of variables increases:
+R Squared increases, Training error decreases, and Test error is lowest only when the signal variables are in the model
+
+```{r, echo=FALSE}
+par(mfrow=c(1,3)) # show plots in a 1 x 3 frame
+plot(2:100, rsq, xlab = "Number of Variables", ylab = "R Squared", log = "y") # log scale y axis
+plot(2:100, trainerr, xlab = "Number of Variables", ylab = "Training Error", log = "y") # log scale y axis
+plot(2:100, testerr, xlab = "Number of Variables", ylab = "Test Error", log = "y") # log scale y axis
+```
+
+## Bias and Variance
+
+* As model complexity increases, the bias of beta_hat - the average difference between the true beta and beta_hat, if we were to repeat the experiment a huge number of times - will decrease.
+* But as complexity increases, the variance of beta_hat - the amount by which the beta_hats will differ across experiments - will increase.
+* The test error depends on both the bias and variance:
+
+        Test Error = Bias^2 + Variance
+
+* There is a bias-variance trade-off.  We want a model that is sufficiently complex as to have not too much bias, but not so complex that it has to much variance.
+
+## Overfitting
+
+* Fitting an overly complex model - a model that has too much variance - is known as overfitting.
+* When p is approximately equal to n, we must work hard to avoid overfitting
+* In particular, we must rely not on training error, but on test error, as a measure of model performance.
+* How can we estimate the test error?
+1. The validation set approach.
+2. Leave-one-out cross-validation
+3. K-fold cross-validation
